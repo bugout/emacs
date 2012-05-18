@@ -1,0 +1,189 @@
+;; Emacs Configuration File
+
+(setq vc-handled-backends nil)
+
+(tool-bar-mode -1)
+(setq inhibit-startup-echo-area-message t)
+(setq inhibit-startup-message t)
+
+(setq make-backup-files nil)
+(setq auto-save-default nil)
+
+
+;; Aspell Settings
+(add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/")
+(setq-default ispell-program-name "aspell")
+;;(setq text-mode-hook '(lambda() (flyspell-mode t) ))
+
+;; Color Scheme
+(require 'color-theme)
+(setq color-theme-is-global t)
+(color-theme-robin-hood)
+
+(require 'color-theme)
+(color-theme-classic)
+
+
+(defun my-init-cedet ()
+  (interactive)
+  (unless (fboundp 'cedet-version)
+    (load-file (expand-file-name "c:/emacs/site-lisp/cedet-1.1/common/cedet.el"))
+    (setq semantic-symref-tool 'global)
+    (semantic-load-enable-code-helpers)
+    ;; stickyfunc irritates me, so deactivate it
+    ;; (global-semantic-stickyfunc-mode -1)
+    ))
+
+(eval-after-load "cc-mode"
+  '(my-init-cedet))
+
+
+;(load-file "c:/emacs/site-lisp/cedet-1.1/common/cedet.el")
+;(global-ede-mode 1)                      ; Enable the Project management system
+;(semantic-load-enable-code-helpers)      ; Enable prototype help and smart completion 
+;(global-srecode-minor-mode 1)            ; Enable template insertion menu
+
+(global-set-key (kbd "<f12>") 'semantic-ia-fast-jump)
+(global-set-key [(meta *)] 'semantic-mrub-switch-tags)
+
+
+(autoload 'gtags-mode "gtags" "" t)
+(setq c-mode-hook
+          '(lambda ()
+              (gtags-mode 1)
+      ))
+
+(require 'gtags)
+
+; Cycling gtags result
+(defun ww-next-gtag ()
+  "Find next matching tag, for GTAGS."
+  (interactive)
+  (let ((latest-gtags-buffer
+         (car (delq nil  (mapcar (lambda (x) (and (string-match "GTAGS SELECT" (buffer-name x)) (buffer-name x)) )
+                                 (buffer-list)) ))))
+    (cond (latest-gtags-buffer
+           (switch-to-buffer latest-gtags-buffer)
+           (forward-line)
+           (gtags-select-it nil))
+          ) ))
+
+(global-set-key "\M-;" 'ww-next-gtag)   ;; M-; cycles to next result, after doing M-. C-M-. or C-M-,
+(global-set-key "\M-." 'gtags-find-tag) ;; M-. finds tag
+(global-set-key [(control meta .)] 'gtags-find-rtag)   ;; C-M-. find all references of tag
+(global-set-key [(control meta ,)] 'gtags-find-symbol) ;; C-M-, find all usages of symbol.
+
+
+;; Chinese font
+
+(defun qiang-font-existsp (font)
+  (if (null (x-list-fonts font))
+      nil t))
+
+(defun qiang-make-font-string (font-name font-size)
+  (if (and (stringp font-size) 
+           (equal ":" (string (elt font-size 0))))
+      (format "%s%s" font-name font-size)
+    (format "%s %s" font-name font-size)))
+
+(defun qiang-set-font (english-fonts
+                       english-font-size
+                       chinese-fonts
+                       &optional chinese-font-size)
+  "english-font-size could be set to \":pixelsize=18\" or a integer.
+If set/leave chinese-font-size to nil, it will follow english-font-size"
+  (require 'cl)                         ; for find if
+  (let ((en-font (qiang-make-font-string
+                  (find-if #'qiang-font-existsp english-fonts)
+                  english-font-size))
+        (zh-font (font-spec :family (find-if #'qiang-font-existsp chinese-fonts)
+                            :size chinese-font-size)))
+ 
+    ;; Set the default English font
+    ;; 
+    ;; The following 2 method cannot make the font settig work in new frames.
+    ;; (set-default-font "Consolas:pixelsize=18")
+    ;; (add-to-list 'default-frame-alist '(font . "Consolas:pixelsize=18"))
+    ;; We have to use set-face-attribute
+    (message "Set English Font to %s" en-font)
+    (set-face-attribute
+     'default nil :font en-font)
+ 
+    ;; Set Chinese font 
+    ;; Do not use 'unicode charset, it will cause the english font setting invalid
+    (message "Set Chinese Font to %s" zh-font)
+    (dolist (charset '(kana han symbol cjk-misc bopomofo))
+      (set-fontset-font (frame-parameter nil 'font)
+                        charset
+                        zh-font))))
+
+(qiang-set-font
+; '("Consolas" "Monaco" "DejaVu Sans Mono" "Monospace" "Courier New") ":pixelsize=18"
+'("Courier New") ":pixelsize=18"
+ '("SimSun" "Microsoft Yahei" "文泉驿等宽微米黑" "黑体" "新宋体" "宋体"))
+
+
+; AucTex
+(eval-after-load "tex"
+  '(add-to-list 'TeX-command-list
+     		'("XeLaTeX" "%`xelatex --synctex=1%(mode)%' %t" TeX-run-TeX nil (latex-mode doctex-mode) :help "Run XeLaTeX")))
+(setq Tex-command-default "XeLaTex")
+
+(setq Tex-save-query nil)
+(setq Tex-show-compilation t)
+(setq Tex-PDF-mode t)
+(setq-default TeX-master nil) ; Query for master file.
+(setq TeX-parse-self t) ; Enable parse on load.
+(setq TeX-auto-save t) ; Enable parse on save.
+
+(add-hook 'LaTeX-mode-hook 'TeX-PDF-mode)
+(add-hook 'LaTeX-mode-hook 'turn-on-auto-fill)
+;(add-hook 'LaTeX-mode-hook 'flyspell-mode)
+(add-hook 'LaTeX-mode-hook '(lambda()
+ 			    (local-set-key "\C-c\C-f" 'LaTeX-fill-paragraph)))
+
+
+(require 'reftex)
+(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(setq reftex-plug-into-AUCTeX t)
+
+;; (autoload 'reftex-mode "reftex" "RefTeX Minor Mode" t)
+;; (autoload 'turn-on-reftex "reftex" "RefTeX Minor Mode" nil)
+;; (autoload 'reftex-citation "reftex-cite" "Make citation" nil)
+;; (autoload 'reftex-index-phrase-mode "reftex-index" "Phrase mode" t)
+;; (setq reftex-revisit-to-follow t
+;;  reftex-auto-recenter-toc t)
+
+;; (add-hook 'TeX-mode-hook
+;;     (lambda ()
+;;     (setq reftex-plug-into-AUCTeX t)
+;;     (turn-on-reftex)
+;;     (define-key LaTeX-mode-map (kbd "TAB") 'TeX-complete-symbol)
+;;     (TeX-PDF-mode t)
+;;     (setq TeX-save-query nil )
+;;     (setq TeX-show-compilation t)
+;;     ))
+(put 'dired-find-alternate-file 'disabled nil)
+
+
+(add-hook 'dired-mode-hook
+  	  '(lambda ()
+	     (local-set-key (kbd "<f5>") 'dired-external-open)))
+
+(defun dired-external-open ()
+  (interactive)
+  (let* ((filename (dired-get-filename nil t)))
+    (message "Opening %s..." filename)
+    (shell-command
+     (concat "start \"\" " (shell-quote-argument filename)))
+    (message "Opening %s done" filename)))
+
+(require 'dired-details)
+(require 'dired-details+)
+(dired-details-install)
+
+(setq split-height-threshold nil) 
+(setq split-width-threshold 0)
+
+(global-set-key (kbd "C-{") 'enlarge-window-horizontally)
+(global-set-key (kbd "C-}") 'shrink-window-horizontally)
