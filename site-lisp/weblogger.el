@@ -413,12 +413,15 @@ shouldn't be changed.")
         (let ((map (copy-keymap message-mode-map))
               (template-map (make-sparse-keymap)))
           (define-key map "\C-c\C-c" 'weblogger-send-entry)
-          (define-key map "\C-x\C-s" 'weblogger-publish-entry)
+          (define-key map "\C-x\C-s" 'weblogger-save-entry) ; customize to save draft
+	  (define-key map "\C-x\C-p" 'weblogger-publish-entry)
+	  (define-key map "\C-c\C-v" 'weblogger-preview-entry)
           (when (fboundp 'unicode-smart-double-quote)
             (define-key map "\"" 'unicode-smart-double-quote)
             (define-key map "'" 'unicode-smart-single-quote)
             (define-key map "-" 'unicode-smart-hyphen)
             (define-key map "." 'unicode-smart-period))
+	  (define-key map "\C-c\C-s" 'weblogger-start-entry)
           (define-key map "\C-c\C-n" 'weblogger-next-entry)
           (define-key map "\C-c\C-p" 'weblogger-prev-entry)
           (define-key map "\C-c\C-k" 'weblogger-delete-entry)
@@ -555,6 +558,7 @@ The order of bindings in a keymap matters when it is used as a menu."
 (defun weblogger-select-configuration (&optional config)
   "Select a previously saved configuration."
   (interactive)
+  (setenv "http_proxy" "http://127.0.0.1:8087")
   (let* ((completion-ignore-case t)
          (name (or config
                    (if (= 1 (length weblogger-config-alist))
@@ -678,6 +682,20 @@ available."
   (setq weblogger-ring-index 0)
   (weblogger-edit-entry))
 
+(defvar weblogger-entry-id nil)
+
+(defun weblogger-preview-entry ()
+  "Preview current blogger entry.
+   If it is not an entry, open the main page"
+  (interactive)
+;  (browse-url  (url-host (url-generic-parse-url weblogger-server-url))))
+  (let ((server-url  (url-host (url-generic-parse-url weblogger-server-url))))
+;    (message "%s" weblogger-entry-id)))
+       (if (equal weblogger-entry-id nil)
+	    (browse-url server-url)
+	  (browse-url (format "%s/?p=%s" server-url weblogger-entry-id)))))
+
+
 (defun weblogger-entry-setup-headers (entry &optional body-line)
   "Add any pertinant headers to the weblog entry."
   (let ((entry-id (when (cdr (assoc  "entry-id" entry))
@@ -685,7 +703,7 @@ available."
 			(cdr (assoc  "entry-id" entry))
 		      (int-to-string (cdr (assoc  "entry-id" entry))))))
 	(title    (cdr (assoc "title"       entry))))
-
+    (setq weblogger-entry-id  (symbol-value 'entry-id))
     (mapc 'message-add-header
 	    (delq nil
 		  (mapcar
@@ -708,8 +726,7 @@ available."
 		    (list "In-Reply-To"
 			  (let ((hold nil))
 			    (mapc
-			     (lambda (p)
-			       (setq hold (concat hold p ", ")))
+			     (lambda (p)			       (setq hold (concat hold p ", ")))
 			     (cdr (assoc "trackbacks"  entry)))
 			    (when hold hold)))
 		    (list "X-URL"
