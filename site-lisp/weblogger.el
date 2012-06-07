@@ -558,7 +558,6 @@ The order of bindings in a keymap matters when it is used as a menu."
 (defun weblogger-select-configuration (&optional config)
   "Select a previously saved configuration."
   (interactive)
-  (setenv "http_proxy" "http://127.0.0.1:8087")
   (let* ((completion-ignore-case t)
          (name (or config
                    (if (= 1 (length weblogger-config-alist))
