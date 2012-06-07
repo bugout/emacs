@@ -8,8 +8,10 @@
 (add-to-list 'load-path "~/emacs/site-lisp")
 (global-set-key (kbd "C-z") 'undo)
 ;; Enlarge and shrink window
-(global-set-key (kbd "C-{") 'enlarge-window-horizontally)
-(global-set-key (kbd "C-}") 'shrink-window-horizontally)
+(global-set-key (kbd "C-}") 'enlarge-window-horizontally)
+(global-set-key (kbd "C-{") 'shrink-window-horizontally)
+;; Set up http proxy
+(setenv "http_proxy" "http://127.0.0.1:8087")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Appearance
@@ -87,10 +89,10 @@
 ;; LaTeX
 (load "auctex.el" nil t t)
 (load "preview-latex.el" nil t t)
-(setq TeX-save-query  nil )
+;(setq TeX-save-query  nil )
 (setq TeX-show-compilation t)
 (setq TeX-PDF-mode t)
-(setq TeX-parse-self t) ;; Enable parse on load
+;(setq TeX-parse-self t) ;; Enable parse on load
 (setq-default TeX-master nil) ; Query for master file.
 (eval-after-load "tex"
    '(add-to-list 'TeX-command-list '("XeLaTeX" "%`xelatex --synctex=1%(mode)%' %t" TeX-run-TeX nil (latex-mode doctex-mode) :help "Run XeLaTeX")))
@@ -129,5 +131,40 @@
 
 
 
+;; Twittering & Sina Weibo
+;; (require 'twittering-mode)
+;; (setq twittering-use-master-password t)
+;; (twittering-enable-unread-status-notifier)
+;; (setq-default twittering-icon-mode t)
+;; (setq twittering-initial-timeline-spec-string 
+;;       '(":home@sina"
+;;         ;":home@twitter"
+;; ;	":home@douban"
+;; ))
 
+(load-file "~/emacs/twitter_config")
 
+(setq evernote-enml-formatter-command '("w3m" "-dump" "-I" "UTF8" "-O" "UTF8")) ; option
+(require 'evernote-mode)
+(global-set-key "\C-cec" 'evernote-create-note)
+(global-set-key "\C-ceo" 'evernote-open-note)
+(global-set-key "\C-ces" 'evernote-search-notes)
+(global-set-key "\C-ceS" 'evernote-do-saved-search)
+(global-set-key "\C-cew" 'evernote-write-note)
+(global-set-key "\C-cep" 'evernote-post-region)
+(global-set-key "\C-ceb" 'evernote-browser)
+
+;; emacs-w3m
+(add-to-list 'load-path "/usr/share/emacs/site-lisp/w3m")
+;(require 'w3m-ems)
+(require 'w3m-load)
+(setq browse-url-browser-function 'w3m-browse-url)
+(autoload 'w3m-browse-url "w3m" "Ask a WWW browser to show a URL." t)
+;; optional keyboard short-cut
+(global-set-key "\C-xm" 'browse-url-at-point)
+
+;; slime
+(setq inferior-lisp-program "/opt/ccl/scripts/ccl") ; your Lisp system
+(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/slime/")  ; your SLIME directory
+(require 'slime)
+(slime-setup '(slime-fancy slime-asdf slime-banner))
