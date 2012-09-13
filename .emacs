@@ -10,8 +10,6 @@
 ;; Enlarge and shrink window
 (global-set-key (kbd "C-}") 'enlarge-window-horizontally)
 (global-set-key (kbd "C-{") 'shrink-window-horizontally)
-;; Set up http proxy
-(setenv "http_proxy" "http://127.0.0.1:8087")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Appearance
@@ -20,10 +18,14 @@
 (setq split-width-threshold 0)
 ;; Startup
 (setq inhibit-startup-message t)
+(setq initial-scratch-message "")
 (tool-bar-mode 0)
 ;; Color theme
 (require 'color-theme)
-(color-theme-classic)
+(if window-system
+    (progn
+      (require 'color-theme-tango)
+      (color-theme-tango)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Chinese Support
@@ -105,66 +107,16 @@
 (require 'reftex)
 (setq reftex-plug-into-AUCTeX t)
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Blogging
-
-;; Weblogger
-(require 'weblogger)
-(load-file "~/.emacs.private")
-
-(add-hook 'weblogger-start-edit-entry-hook
-          (lambda()
-            (flyspell-mode 1)
-            (flyspell-buffer)   ; spell check the fetched post
-            (auto-fill-mode -1)
-            (visual-line-mode 1)))
-(add-hook 'weblogger-publish-entry-hook
-          (lambda()
-            (when visual-line-mode
-              (visual-line-mode -1))
-            ;; tabs might spoil code indentation
-            (untabify (point-min) (point-max))))
-(add-hook 'weblogger-publish-entry-end-hook
-          (lambda()
-            (visual-line-mode 1)))
-
-
-
-;; Twittering & Sina Weibo
-;; (require 'twittering-mode)
-;; (setq twittering-use-master-password t)
-;; (twittering-enable-unread-status-notifier)
-;; (setq-default twittering-icon-mode t)
-;; (setq twittering-initial-timeline-spec-string 
-;;       '(":home@sina"
-;;         ;":home@twitter"
-;; ;	":home@douban"
-;; ))
-
-(load-file "~/emacs/twitter_config")
-
-(setq evernote-enml-formatter-command '("w3m" "-dump" "-I" "UTF8" "-O" "UTF8")) ; option
-(require 'evernote-mode)
-(global-set-key "\C-cec" 'evernote-create-note)
-(global-set-key "\C-ceo" 'evernote-open-note)
-(global-set-key "\C-ces" 'evernote-search-notes)
-(global-set-key "\C-ceS" 'evernote-do-saved-search)
-(global-set-key "\C-cew" 'evernote-write-note)
-(global-set-key "\C-cep" 'evernote-post-region)
-(global-set-key "\C-ceb" 'evernote-browser)
-
-;; emacs-w3m
-(add-to-list 'load-path "/usr/share/emacs/site-lisp/w3m")
-;(require 'w3m-ems)
-(require 'w3m-load)
-(setq browse-url-browser-function 'w3m-browse-url)
-(autoload 'w3m-browse-url "w3m" "Ask a WWW browser to show a URL." t)
-;; optional keyboard short-cut
-(global-set-key "\C-xm" 'browse-url-at-point)
-
 ;; slime
 (setq inferior-lisp-program "/opt/ccl/scripts/ccl") ; your Lisp system
 (add-to-list 'load-path "/usr/local/share/emacs/site-lisp/slime/")  ; your SLIME directory
 (require 'slime)
 (slime-setup '(slime-fancy slime-asdf slime-banner))
+
+
+(defun color-theme-face-attr-construct (face frame)
+       (if (atom face)
+           (custom-face-attributes-get face frame)
+         (if (and (consp face) (eq (car face) 'quote))
+             (custom-face-attributes-get (cadr face) frame)
+           (custom-face-attributes-get (car face) frame))))
